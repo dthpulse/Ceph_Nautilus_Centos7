@@ -1,0 +1,24 @@
+---
+- name: tunning ceph configuration
+  become_user: ceph
+  copy:
+    src: ./files/ceph_tunning.txt
+    dest: /home/ceph/ceph
+
+- shell:
+    cmd: |
+     cat ceph_tunning.txt >> ceph.conf
+    chdir: /home/ceph/ceph
+
+- name: distributing ceph.conf
+  become_user: ceph
+  shell:
+    cmd: |
+     ceph-deploy --overwrite-conf admin {{ groups['master'] | join(' ') }} {{ groups['monitors'] | join(' ') }}
+    chdir: /home/ceph/ceph
+
+- name: restarting ceph-mon service
+  service:
+    name: ceph-mon@{{ item.split('.', 1)[0] }}
+    state: restarted
+  loop: "{{ groups['monitors'] }}"

@@ -1,0 +1,3 @@
+---
+- name: create pool
+  script: ./files/deploy_pool.sh

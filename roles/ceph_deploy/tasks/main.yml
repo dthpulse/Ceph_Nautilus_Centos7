@@ -1,0 +1,46 @@
+---
+- name: create ceph directory
+  become_user: ceph
+  file:
+    path: /home/ceph/ceph
+    state: directory
+
+- name: install ceph-deploy
+  yum:
+    name:
+      - ceph-deploy
+      - python-setuptools
+    state: present
+
+- name: deploy
+  become_user: ceph
+  shell:
+    cmd: |
+      ceph-deploy new {{ groups['monitors'] | join(' ') }}
+      ceph-deploy install --release nautilus {{ groups['all'] | join(' ') }}
+    chdir: /home/ceph/ceph
+
+- name: distribute configuration files
+  become_user: ceph
+  shell:
+    cmd: |
+      ceph-deploy mon create-initial
+      ceph-deploy --overwrite-conf admin {{ groups['master'] | join(' ') }} {{ groups['monitors'] | join(' ') }}
+    chdir: /home/ceph/ceph
+
+- name: deploy MGR
+  become_user: ceph
+  shell:
+    cmd: |
+      ceph-deploy mgr create {{ groups['monitors'] | join(' ') }}
+    chdir: /home/ceph/ceph
+
+- name: deploy OSDs
+  become_user: ceph
+  shell:
+    cmd: |
+      ceph-deploy osd create {{ item[0] }} --data {{ item[1] }}
+    chdir: /home/ceph/ceph
+  with_nested:
+    - "{{ groups['osds'] }}"
+    - "{{ devices }}"

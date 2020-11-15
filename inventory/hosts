@@ -1,0 +1,13 @@
+all:
+  hosts:
+    centos[1:8]:
+  children:
+    master:
+      hosts:
+        centos1:
+    monitors:
+      hosts:
+        centos[2:4]:
+    osds:
+      hosts:
+        centos[2:8]:

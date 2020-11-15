@@ -1,0 +1,4 @@
+users: ceph
+devices:
+  - /dev/nvme1n1
+  - /dev/nvme2n1

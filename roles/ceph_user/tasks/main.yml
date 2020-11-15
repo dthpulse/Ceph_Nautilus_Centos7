@@ -1,0 +1,41 @@
+---
+- name: create ceph user
+  user:
+    name: ceph
+    group: users
+    password: ceph
+    shell: /bin/bash
+    state: present
+
+- name: add ceph to sudoers file
+  copy:
+    content: 'ceph ALL=(ALL:ALL) NOPASSWD:ALL'
+    dest: /etc/sudoers.d/ceph
+    mode: 0440
+
+- name: SSH KeyGen command
+  become_user: ceph
+  shell: >
+    ssh-keygen -q -b 2048 -t rsa -N "" -C "creating SSH" -f ~/.ssh/id_rsa
+    creates="~/.ssh/id_rsa"
+
+- name: disable StrictHostKeyChecking
+  become_user: ceph
+  copy:
+    content: "StrictHostKeyChecking no"
+    dest: "/home/ceph/.ssh/config"
+
+- name: Fetch the keyfile from the node to master
+  become_user: ceph
+  fetch:
+    src: "~/.ssh/id_rsa.pub"
+    dest: "buffer/ceph-{{ansible_fqdn}}-id_rsa.pub"
+    flat: yes
+
+- name: add key to authorized_keys for ceph user
+  authorized_key:
+    user: ceph
+    state: present
+    key: "{{ lookup('file','buffer/ceph-{{item}}-id_rsa.pub')}}"
+  with_items:
+    - "{{ groups['all'] }}"

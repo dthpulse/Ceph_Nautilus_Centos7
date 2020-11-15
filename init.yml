@@ -1,0 +1,27 @@
+- hosts: all
+  user: root
+  become: True
+  vars_files: ./vars/vars.yml
+
+  tasks:
+
+    - name: Disable SElinux
+      selinux:
+        state: disabled
+
+  roles:
+    
+    - create_repofile
+    - ceph_user
+
+- hosts: master
+  user: root
+  become: True
+  vars_files: ./vars/vars.yml
+
+  roles:
+    
+    - ceph_deploy
+    - create_pool
+    - ceph_conf_tunning
+
